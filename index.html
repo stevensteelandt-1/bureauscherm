@@ -73,14 +73,12 @@ a{color:inherit;text-decoration:none}
 .cal .ev .lo{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cal .ev.now .ti{color:var(--amber)}
 
-/* Muziek */
-.np{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin-top:auto;min-width:0}
-.cover{width:84px;height:84px;border-radius:12px;background-color:var(--line);-webkit-flex:none;flex:none;margin-right:14px;background-size:cover;background-position:center}
-.np .w{min-width:0;-webkit-flex:1;flex:1}
-.np .s{font-family:var(--display);font-weight:600;font-size:18px;line-height:1.15;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.np .a{color:var(--muted);font-size:13px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pbar{height:4px;border-radius:4px;background:var(--line);margin-top:12px;overflow:hidden}
-.pbar i{display:block;height:100%;width:0;background:var(--sage)}
+/* Radio */
+.stations{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;-webkit-justify-content:space-between;justify-content:space-between;-webkit-align-content:flex-end;align-content:flex-end;margin-top:auto;padding-top:8px}
+.st{width:48.5%;margin-top:6px;background:var(--line);color:var(--fg);border:0;border-radius:10px;padding:8px 8px 8px 10px;text-align:left;font-family:var(--body);font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-webkit-appearance:none;position:relative}
+.st.on{background:var(--sage);color:#10221a}
+.st.load{background:var(--tile2);color:var(--amber)}
+.st.err{color:var(--muted);text-decoration:line-through}
 .dot{display:inline-block;width:7px;height:7px;border-radius:7px;background:var(--sage);margin-right:6px;vertical-align:1px}
 
 /* Taken */
@@ -132,7 +130,7 @@ button:focus,input:focus{outline:2px solid var(--amber)}
   .wrap{height:auto}
   .row{display:block}
   .row>.t,.row>.col{margin:0 0 12px 0}
-  .clock,.wx{min-height:250px}.cal,.todo{min-height:260px}.music{min-height:170px}.news{min-height:560px}
+  .clock,.wx{min-height:250px}.cal,.todo{min-height:260px}.radio{min-height:200px}.news{min-height:560px}
   .time{font-size:96px}
 }
 </style>
@@ -165,9 +163,9 @@ button:focus,input:focus{outline:2px solid var(--amber)}
       <ul id="callist"><li class="empty">Agenda laden&hellip;</li></ul>
     </section>
     <div class="col f1 mr">
-      <section class="t music f1 mb">
-        <div class="lbl"><span>Spotify</span><small id="spstate"></small></div>
-        <div id="spbody" class="fill"></div>
+      <section class="t radio f1 mb">
+        <div class="lbl"><span>Radio</span><small id="rstate">tik op een zender</small></div>
+        <div class="stations" id="stations"></div>
       </section>
       <section class="t todo f1">
         <div class="lbl"><span>Te doen</span><small id="todocount"></small></div>
@@ -194,23 +192,6 @@ button:focus,input:focus{outline:2px solid var(--amber)}
       <label for="s_key">Agendawachtwoord</label>
       <input id="s_key" type="password" autocomplete="off" placeholder="Hetzelfde als CAL_KEY op GitHub">
       <div class="help">Je afspraken staan versleuteld online. Met dit wachtwoord leest dit scherm ze.</div>
-    </div>
-
-    <div class="sec"><h3>Spotify</h3>
-      <label for="s_sp">Client ID</label>
-      <input id="s_sp" autocomplete="off" placeholder="32 tekens van developer.spotify.com">
-      <div class="help">Redirect-URI voor je Spotify-app:</div>
-      <div class="code" id="redir"></div>
-      <div class="btns left">
-        <button class="p" type="button" id="spconnect">Koppel Spotify</button>
-        <button class="g" type="button" id="spdisconnect">Ontkoppel</button>
-      </div>
-      <div class="status" id="spstatus"></div>
-      <div id="exportbox" style="display:none">
-        <div class="help"><b>Overzetten naar de iPad:</b> stuur jezelf deze link (mail of Notities) en open hem op de iPad. Daarna is Spotify op dit toestel ontkoppeld, zodat de iPad het overneemt.</div>
-        <div class="code" id="exportlink"></div>
-        <div class="btns left"><button class="g" type="button" id="copyexport">Kopieer link</button></div>
-      </div>
     </div>
 
     <div class="sec"><h3>Nacht</h3>
@@ -246,11 +227,10 @@ function store(k,v){try{if(v===undefined){var r=localStorage.getItem(k);return r
 /* "2026-10-16T14:00" of "2026-10-16" als lokale tijd (Safari 9 leest dit anders als UTC) */
 function localDate(s){var m=/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(s);return m?new Date(+m[1],m[2]-1,+m[3],+(m[4]||12),+(m[5]||0)):new Date(NaN)}
 
-var DEF={key:"",sp:"",d1:23,d2:6};
+var DEF={key:"",d1:23,d2:6};
 var S=store("bs.settings")||{};
 for(var k in DEF){if(S[k]===undefined||S[k]===null)S[k]=DEF[k]}
 var REDIRECT=location.protocol+"//"+location.host+location.pathname;
-var SP=store("bs.spotify");
 
 /* ---------- import via link (#import=...) ---------- */
 (function(){
@@ -259,8 +239,7 @@ var SP=store("bs.spotify");
   try{
     var b=m[1].replace(/-/g,"+").replace(/_/g,"/");while(b.length%4)b+="=";
     var o=JSON.parse(decodeURIComponent(escape(atob(b))));
-    if(o.sp)S.sp=o.sp;if(o.k)S.key=o.k;store("bs.settings",S);
-    if(o.r){SP={refresh:o.r,access:"",exp:0};store("bs.spotify",SP)}
+    if(o.k){S.key=o.k;store("bs.settings",S)}
   }catch(e){}
   try{history.replaceState(null,"",REDIRECT)}catch(e){location.hash=""}
 })();
@@ -437,73 +416,68 @@ function loadData(){
   });
 }
 
-/* ---------- Spotify ---------- */
-function b64url(a){var s="";for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
-function randStr(n){var c="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",s="",a=new Uint8Array(n);(window.crypto||window.msCrypto).getRandomValues(a);for(var i=0;i<n;i++)s+=c.charAt(a[i]%c.length);return s}
-function spConnect(){
-  if(!S.sp){$("spstatus").textContent="Vul eerst je Client ID in.";return}
-  if(location.protocol!=="https:"){$("spstatus").textContent="Koppelen werkt alleen op je https-adres van GitHub Pages.";return}
-  var v=randStr(64);store("bs.pkce",v);
-  location.href="https://accounts.spotify.com/authorize?response_type=code&client_id="+enc(S.sp)+
-    "&scope="+enc("user-read-currently-playing user-read-playback-state user-read-recently-played")+
-    "&redirect_uri="+enc(REDIRECT)+"&code_challenge_method=S256&code_challenge="+b64url(sha256(utf8(v)));
+/* ---------- radio ---------- */
+/* Per zender meerdere adressen: eerst https, daarna http (oude iPads vertrouwen niet elk nieuw certificaat). */
+var VRT=function(id){return ["https://icecast.vrtcdn.be/"+id+"-high.mp3","http://icecast.vrtcdn.be/"+id+"-high.mp3","http://icecast.vrtcdn.be/"+id+"-mid.mp3"]};
+var STW=function(id){return ["https://playerservices.streamtheworld.com/api/livestream-redirect/"+id,"http://playerservices.streamtheworld.com/api/livestream-redirect/"+id]};
+var STATIONS=[
+  {n:"Radio 2",u:VRT("ra2wvl")},
+  {n:"Radio 1",u:VRT("radio1")},
+  {n:"StuBru",u:VRT("stubru")},
+  {n:"MNM",u:VRT("mnm")},
+  {n:"Sporza",u:VRT("sporza"),note:"Sporza zendt alleen uit tijdens grote sportmomenten."},
+  {n:"Qmusic",u:STW("QMUSIC.mp3").concat(STW("QMUSIC_SC"),["https://21293.live.streamtheworld.com/QMUSIC.mp3"])},
+  {n:"Joe",u:STW("JOE_SC").concat(STW("JOE.mp3"))},
+  {n:"TOPradio",u:["https://str.topradio.be/topradio.mp3","http://str.topradio.be/topradio.mp3"]}
+];
+var audio=null,cur=-1,tryIdx=0,loadTimer=null,wantPlay=false;
+function rState(t){$("rstate").innerHTML=t}
+function drawStations(){
+  var box=$("stations"),html="";
+  for(var i=0;i<STATIONS.length;i++){
+    var s=STATIONS[i],cls="st"+(i===cur?(s.state==="on"?" on":" load"):"")+(s.state==="err"&&i!==cur?" err":"");
+    html+='<button type="button" class="'+cls+'" data-i="'+i+'">'+(i===cur&&s.state==="on"?'<span class="dot" style="background:#10221a"></span>':"")+esc(s.n)+'</button>';
+  }
+  box.innerHTML=html;
 }
-function tokenReq(body){
-  return req("https://accounts.spotify.com/api/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:body}).then(function(r){
-    var j=JSON.parse(r.text);
-    SP={access:j.access_token,refresh:j.refresh_token||(SP&&SP.refresh),exp:Date.now()+(j.expires_in-60)*1000};
-    store("bs.spotify",SP);return SP.access;
-  });
+function stopRadio(msg){
+  wantPlay=false;clearTimeout(loadTimer);
+  if(audio){try{audio.pause();audio.removeAttribute("src");audio.load()}catch(e){}}
+  if(cur>=0&&STATIONS[cur].state!=="err")STATIONS[cur].state="";
+  cur=-1;rState(msg||"tik op een zender");drawStations();
 }
-function spToken(){
-  if(!SP||!SP.refresh)return Promise.reject({status:401});
-  if(SP.access&&Date.now()<SP.exp)return Promise.resolve(SP.access);
-  return tokenReq("grant_type=refresh_token&refresh_token="+enc(SP.refresh)+"&client_id="+enc(S.sp));
+function tryNext(){
+  var s=STATIONS[cur];
+  if(tryIdx>=s.u.length){
+    s.state="err";var name=s.n,note=s.note;stopRadio(name+" niet bereikbaar");
+    if(note)rState(note);
+    return;
+  }
+  var url=s.u[tryIdx++];
+  clearTimeout(loadTimer);
+  loadTimer=setTimeout(function(){if(wantPlay&&STATIONS[cur]&&STATIONS[cur].state!=="on")tryNext()},9000);
+  audio.src=url;
+  try{var p=audio.play();if(p&&p.then)p.then(null,function(){})}catch(e){}
 }
-var justConnected=false;
-function spHandleRedirect(){
-  var m=/[?&]code=([^&]+)/.exec(location.search),err=/[?&]error=([^&]+)/.exec(location.search);
-  if(!m&&!err)return Promise.resolve();
-  try{history.replaceState(null,"",REDIRECT)}catch(e){}
-  if(err){spMsg("Koppelen geweigerd door Spotify.");return Promise.resolve()}
-  var v=store("bs.pkce");store("bs.pkce",null);
-  return tokenReq("grant_type=authorization_code&code="+enc(decodeURIComponent(m[1]))+"&redirect_uri="+enc(REDIRECT)+"&client_id="+enc(S.sp)+"&code_verifier="+enc(v||""))
-    .then(function(){justConnected=true},function(){spMsg("Koppelen mislukt. Klopt de redirect-URI in je Spotify-app precies?")});
+function playStation(i){
+  if(i===cur){stopRadio("gestopt");return}
+  if(!audio){
+    audio=new Audio();audio.preload="none";
+    audio.addEventListener("playing",function(){if(cur<0)return;clearTimeout(loadTimer);STATIONS[cur].state="on";rState('<span class="dot"></span>'+esc(STATIONS[cur].n));drawStations()});
+    audio.addEventListener("error",function(){if(wantPlay&&cur>=0){STATIONS[cur].state="load";tryNext()}});
+    audio.addEventListener("stalled",function(){if(wantPlay&&cur>=0&&STATIONS[cur].state==="on"){rState("verbinding herstellen&hellip;");tryIdx=Math.max(0,tryIdx-1);setTimeout(function(){if(wantPlay)tryNext()},3000)}});
+  }
+  if(cur>=0&&STATIONS[cur].state!=="err")STATIONS[cur].state="";
+  cur=i;tryIdx=0;wantPlay=true;STATIONS[i].state="load";
+  rState(esc(STATIONS[i].n)+" laden&hellip;");drawStations();
+  store("bs.radio",i);
+  tryNext();
 }
-function spMsg(t){$("spbody").innerHTML='<div class="empty">'+t+'</div>'}
-function drawTrack(o){
-  $("spstate").innerHTML=o.playing?'<span class="dot"></span>speelt nu':o.label;
-  var pct=o.dur?Math.min(100,o.prog/o.dur*100):0;
-  $("spbody").innerHTML='<div class="np"><div class="cover" style="background-image:url(&quot;'+esc(o.img)+'&quot;)"></div><div class="w"><div class="s">'+esc(o.title)+'</div><div class="a">'+esc(o.artist)+'</div></div></div>'+
-    (o.dur?'<div class="pbar"><i style="width:'+pct.toFixed(1)+'%"></i></div>':"");
-}
-function names(a){var s=[];for(var i=0;i<a.length;i++)s.push(a[i].name);return s.join(", ")}
-function pollSpotify(){
-  if(!SP||!SP.refresh){$("spstate").textContent="";spMsg('<b>Nog niet gekoppeld.</b><br>Koppel Spotify op je computer en zet het over met de link uit &#9881;.');return}
-  spToken().then(function(tok){
-    return req("https://api.spotify.com/v1/me/player/currently-playing?additional_types=episode",{headers:{Authorization:"Bearer "+tok}}).then(function(r){
-      var j=r.status===204||!r.text?null:JSON.parse(r.text);
-      if(j&&j.item){
-        var it=j.item,ep=it.type==="episode",imgs=ep?(it.images||(it.show&&it.show.images)||[]):((it.album&&it.album.images)||[]);
-        drawTrack({title:it.name,artist:ep?(it.show&&it.show.name):names(it.artists),img:imgs[0]?imgs[0].url:"",prog:j.progress_ms,dur:it.duration_ms,playing:j.is_playing,label:"gepauzeerd"});
-        return;
-      }
-      return req("https://api.spotify.com/v1/me/player/recently-played?limit=1",{headers:{Authorization:"Bearer "+tok}}).then(function(r2){
-        var k=JSON.parse(r2.text),t=k.items&&k.items[0]&&k.items[0].track;
-        if(!t){$("spstate").textContent="stil";spMsg("Er speelt niets.");return}
-        drawTrack({title:t.name,artist:names(t.artists),img:t.album.images[0]?t.album.images[0].url:"",playing:false,label:"laatst gespeeld"});
-      });
-    });
-  }).then(null,function(e){
-    if(e&&(e.status===400||e.status===401)){SP=null;store("bs.spotify",null);spMsg("Koppeling verlopen. Koppel Spotify opnieuw op je computer.")}
-    else if(e&&e.status===403)spMsg("Spotify weigert de toegang. Staat je account bij <b>User Management</b> in je Spotify-app?");
-    else if(e&&e.status===0)spMsg("Spotify is niet bereikbaar vanaf dit toestel.");
-  });
-}
-function exportLink(){
-  var o={sp:S.sp,r:SP&&SP.refresh,k:S.key};
-  return REDIRECT+"#import="+b64url(utf8(JSON.stringify(o)));
-}
+$("stations").addEventListener("click",function(e){
+  var t=e.target;while(t&&t!==this&&!t.getAttribute("data-i"))t=t.parentNode;
+  if(t&&t.getAttribute&&t.getAttribute("data-i")!==null)playStation(+t.getAttribute("data-i"));
+});
+drawStations();
 
 /* ---------- taken ---------- */
 var todos=store("bs.todos")||[{t:"Voorbeeld: mails beantwoorden",d:true},{t:"Voorbeeld: planten water geven",d:false}];
@@ -526,38 +500,23 @@ $("addf").addEventListener("submit",function(e){e.preventDefault();var v=$("newt
 
 /* ---------- instellingen ---------- */
 function openSettings(){
-  $("s_key").value=S.key;$("s_sp").value=S.sp;$("s_d1").value=S.d1;$("s_d2").value=S.d2;
-  $("redir").textContent=REDIRECT;
-  var on=!!(SP&&SP.refresh);
-  $("spstatus").textContent=on?"Gekoppeld op dit toestel.":"Niet gekoppeld op dit toestel.";
-  $("exportbox").style.display=on?"block":"none";
-  if(on)$("exportlink").textContent=exportLink();
+  $("s_key").value=S.key;$("s_d1").value=S.d1;$("s_d2").value=S.d2;
   $("ov").style.display="block";
 }
 function readForm(){
-  S.key=$("s_key").value;S.sp=$("s_sp").value.replace(/\s/g,"");
+  S.key=$("s_key").value;
   S.d1=parseInt($("s_d1").value,10);if(isNaN(S.d1))S.d1=DEF.d1;S.d2=parseInt($("s_d2").value,10);if(isNaN(S.d2))S.d2=DEF.d2;
   store("bs.settings",S);
 }
 $("gear").onclick=openSettings;
 $("cancel").onclick=function(){$("ov").style.display="none"};
-$("setf").addEventListener("submit",function(e){e.preventDefault();readForm();$("ov").style.display="none";drawAll();pollSpotify();tick()});
-$("spconnect").onclick=function(){readForm();spConnect()};
-$("spdisconnect").onclick=function(){SP=null;store("bs.spotify",null);$("spstatus").textContent="Ontkoppeld.";$("exportbox").style.display="none";pollSpotify()};
-$("copyexport").onclick=function(){
-  var link=$("exportlink").textContent,done=function(){$("copyexport").textContent="Gekopieerd";SP=null;store("bs.spotify",null);$("spstatus").textContent="Link gekopieerd. Spotify is hier ontkoppeld; open de link op de iPad.";pollSpotify()};
-  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(link).then(done,function(){selectExport()});return}}catch(e){}
-  selectExport();
-};
-function selectExport(){try{var r=document.createRange();r.selectNodeContents($("exportlink"));var s=window.getSelection();s.removeAllRanges();s.addRange(r)}catch(e){}$("spstatus").textContent="Selecteer en kopieer de link hierboven."}
+$("setf").addEventListener("submit",function(e){e.preventDefault();readForm();$("ov").style.display="none";drawAll();tick()});
 
 /* ---------- starten ---------- */
 tick();setInterval(tick,1000);
 renderTodos();
 loadData();setInterval(loadData,5*60000);
 setInterval(drawAll,60000);
-spHandleRedirect().then(function(){pollSpotify();if(justConnected)openSettings()});
-setInterval(function(){if(!document.hidden)pollSpotify()},10000);
 })();
 </script>
 </body>
