@@ -9,7 +9,8 @@ const PLACE = process.env.PLACE || "Brussel";
 const LAT = process.env.LAT || "50.85";
 const LON = process.env.LON || "4.35";
 const FEED = process.env.FEED || "https://www.vrt.be/vrtnws/nl.rss.articles.xml";
-const ICS = (process.env.ICS_URLS || "").split(/\s+/).filter(Boolean);
+// Links mogen gescheiden zijn door spaties, nieuwe regels, komma's, of zelfs aan elkaar geplakt.
+const ICS = (process.env.ICS_URLS || "").match(/(?:webcals?|https?):\/\/.+?(?=(?:webcals?|https?):\/\/|[\s,;]|$)/gi) || [];
 const KEY = process.env.CAL_KEY || "";
 const DAY = 864e5;
 
@@ -144,8 +145,25 @@ function expand(ev, from, to, overrides) {
     else if (R.FREQ === "WEEKLY") {
       if (byday) { const mon = s.getDate() - ((s.getDay() + 6) % 7) + k * 7 * iv; byday.forEach(b => { const d = mk(s.getFullYear(), s.getMonth(), mon + b); if (d >= s) c.push(d); }); }
       else c.push(mk(s.getFullYear(), s.getMonth(), s.getDate() + k * 7 * iv));
-    } else if (R.FREQ === "MONTHLY") { const d = mk(s.getFullYear(), s.getMonth() + k * iv, s.getDate()); if (d.getDate() === s.getDate()) c.push(d); }
-    else if (R.FREQ === "YEARLY") { const d = mk(s.getFullYear() + k * iv, s.getMonth(), s.getDate()); if (d.getDate() === s.getDate()) c.push(d); }
+    } else if (R.FREQ === "MONTHLY" || R.FREQ === "YEARLY") {
+      const y = R.FREQ === "YEARLY" ? s.getFullYear() + k * iv : s.getFullYear();
+      const mo = R.FREQ === "YEARLY" ? (R.BYMONTH ? +R.BYMONTH - 1 : s.getMonth()) : s.getMonth() + k * iv;
+      if (R.BYDAY) {
+        // bv. "2TU" (2de dinsdag), "-1FR" (laatste vrijdag) of BYDAY=TU;BYSETPOS=2 zoals Outlook het schrijft
+        const m = /^([+-]?\d)?(MO|TU|WE|TH|FR|SA|SU)$/.exec(R.BYDAY);
+        const nth = m && (m[1] ? +m[1] : R.BYSETPOS ? +R.BYSETPOS : 0);
+        if (!m || !nth) break; // patroon dat we niet kennen: liever niets tonen dan iets fout
+        const wd = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 }[m[2]];
+        let d;
+        if (nth > 0) { const first = new Date(y, mo, 1); d = mk(first.getFullYear(), first.getMonth(), 1 + ((wd - first.getDay() + 7) % 7) + (nth - 1) * 7); }
+        else { const last = new Date(y, mo + 1, 0); d = mk(last.getFullYear(), last.getMonth(), last.getDate() - ((last.getDay() - wd + 7) % 7) + (nth + 1) * 7); }
+        if (d.getMonth() === new Date(y, mo, 1).getMonth() && d >= s) c.push(d);
+      } else {
+        const day = R.BYMONTHDAY ? +R.BYMONTHDAY : s.getDate();
+        const d = mk(y, mo, day);
+        if (d.getDate() === day && d >= s) c.push(d);
+      }
+    }
     else { push(s); break; }
     for (const d of c) {
       if (until && d > until) return out;
