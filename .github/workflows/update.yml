@@ -1,0 +1,62 @@
+
+name: Bureauscherm bijwerken
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Weer, nieuws en agenda ophalen
+        run: |
+          mkdir -p site
+          cp index.html site/
+          node update.js site/data.json
+        env:
+          TZ: Europe/Brussels
+          PLACE: Brussel
+          LAT: "50.85"
+          LON: "4.35"
+          FEED: https://www.vrt.be/vrtnws/nl.rss.articles.xml
+          ICS_URLS: ${{ secrets.ICS_URLS }}
+          CAL_KEY: ${{ secrets.CAL_KEY }}
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      # GitHub zet geplande taken stil na 60 dagen zonder activiteit; dit houdt hem wakker.
+      - name: Planning actief houden
+        if: github.event_name == 'schedule'
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/update.yml/enable" || true
+        env:
+          GH_TOKEN: ${{ github.token }}
