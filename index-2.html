@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Bureauscherm</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@300;600&family=DM+Sans:wght@400;500&family=JetBrains+Mono&display=swap">
+<style>
+/* Geschreven voor Safari 9 (iOS 9.3): flexbox i.p.v. grid, geen flex-gap, geen clamp. Rijen: klok + weer, dan agenda | muziek/taken | nieuws. */
+:root{
+  --bg:#12151b; --tile:#1b2029; --tile2:#222834; --line:#2c3341;
+  --fg:#eef0f3; --muted:#8b93a3; --amber:#f2b45a; --sage:#8fc2a5; --rain:#7fb3e6;
+  --display:"Bricolage Grotesque","Avenir Next",Helvetica,sans-serif;
+  --body:"DM Sans","Avenir Next",Helvetica,Arial,sans-serif;
+  --mono:"JetBrains Mono",Menlo,Courier,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:#12151b;background:var(--bg);color:#eef0f3;color:var(--fg);font-family:var(--body);-webkit-font-smoothing:antialiased;padding:14px 16px;-webkit-text-size-adjust:100%;overflow:hidden}
+a{color:inherit;text-decoration:none}
+.wrap{display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;height:100%}
+.row{display:-webkit-flex;display:flex;min-height:0}
+.r1{-webkit-flex:1.15;flex:1.15;margin-bottom:12px}
+.r2{-webkit-flex:2;flex:2}
+.col{display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;min-width:0;min-height:0}
+.t{background:var(--tile);border-radius:22px;padding:18px 20px;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;min-width:0;min-height:0;position:relative;overflow:hidden}
+.f1{-webkit-flex:1;flex:1}.f2{-webkit-flex:2;flex:2}
+.mr{margin-right:12px}.mb{margin-bottom:12px}
+.lbl{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:-webkit-flex;display:flex;-webkit-justify-content:space-between;justify-content:space-between;-webkit-align-items:center;align-items:center}
+.lbl small{letter-spacing:.04em;text-transform:none;font-size:11px}
+.empty{color:var(--muted);font-size:14px;line-height:1.45;margin-top:12px}
+.empty b{color:var(--fg);font-weight:500}
+.fill{display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-flex:1;flex:1;min-height:0}
+
+/* Klok */
+.clock{background:var(--tile2);-webkit-justify-content:space-between;justify-content:space-between}
+.greet{font-size:17px;color:var(--muted)}
+.time{font-family:var(--display);font-weight:300;font-size:118px;line-height:.9;letter-spacing:-.04em;white-space:nowrap}
+.time .sec{font-size:.26em;color:var(--amber);letter-spacing:0;margin-left:.15em;vertical-align:top}
+.date{font-family:var(--display);font-weight:600;font-size:24px}
+.chips{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin-top:4px}
+.chip{font-family:var(--mono);font-size:12px;padding:5px 10px;border-radius:99px;background:var(--line);margin:4px 8px 0 0;white-space:nowrap}
+.gear{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:none;color:var(--muted);font-size:19px;line-height:1;-webkit-appearance:none}
+
+/* Weer */
+.wxtop{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin-top:8px}
+.wxicon{width:72px;height:72px;-webkit-flex:none;flex:none;margin-right:14px}
+.wxicon svg,.day svg{width:100%;height:100%}
+.wxtemp{font-family:var(--display);font-weight:300;font-size:70px;line-height:1}
+.wxdesc{margin-left:16px;min-width:0}
+.wxdesc .d1{font-family:var(--display);font-weight:600;font-size:20px}
+.wxdesc .d2{color:var(--muted);font-size:13px;margin-top:3px;line-height:1.4}
+.wxbottom{display:-webkit-flex;display:flex;margin-top:auto;-webkit-align-items:flex-end;align-items:flex-end}
+.rain{-webkit-flex:1.4;flex:1.4;min-width:0;margin-right:18px}
+.bars{display:-webkit-flex;display:flex;-webkit-align-items:flex-end;align-items:flex-end;height:46px;margin-top:6px}
+.bars div{-webkit-flex:1;flex:1;margin-right:3px;background:var(--rain);border-radius:3px 3px 1px 1px;min-height:2px;opacity:.85}
+.bars div:last-child{margin-right:0}
+.barlab{display:-webkit-flex;display:flex;-webkit-justify-content:space-between;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px}
+.days{-webkit-flex:1;flex:1;display:-webkit-flex;display:flex;min-width:0}
+.day{-webkit-flex:1;flex:1;text-align:center;min-width:0}
+.day .n{font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase}
+.day .ic{width:30px;height:30px;margin:4px auto}
+.day .r{font-size:13px}.day .r span{color:var(--muted)}
+
+/* Agenda */
+.cal ul{list-style:none;margin:6px 0 0;padding:0;overflow:auto;-webkit-overflow-scrolling:touch;-webkit-flex:1;flex:1}
+.cal .dh{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);margin:12px 0 4px}
+.cal .ev{display:-webkit-flex;display:flex;padding:7px 0;border-bottom:1px solid var(--line)}
+.cal .ev .h{font-family:var(--mono);font-size:12px;color:var(--muted);width:46px;-webkit-flex:none;flex:none;padding-top:2px}
+.cal .ev .w{min-width:0;-webkit-flex:1;flex:1}
+.cal .ev .ti{font-size:15px;line-height:1.25;word-wrap:break-word}
+.cal .ev .lo{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal .ev.now .ti{color:var(--amber)}
+
+/* Radio */
+.stations{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;-webkit-justify-content:space-between;justify-content:space-between;-webkit-align-content:flex-end;align-content:flex-end;margin-top:auto;padding-top:8px}
+.rs{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.35;min-height:18px}
+.st{width:48.5%;margin-top:6px;background:var(--line);color:var(--fg);border:0;border-radius:10px;padding:8px 8px 8px 10px;text-align:left;font-family:var(--body);font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-webkit-appearance:none;position:relative}
+.st.on{background:var(--sage);color:#10221a}
+.st.load{background:var(--tile2);color:var(--amber)}
+.st.err{color:var(--muted);text-decoration:line-through}
+.dot{display:inline-block;width:7px;height:7px;border-radius:7px;background:var(--sage);margin-right:6px;vertical-align:1px}
+
+/* Taken */
+.todo ul{list-style:none;padding:0;margin:6px 0 0;overflow:auto;-webkit-flex:1;flex:1;-webkit-overflow-scrolling:touch}
+.todo li{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:15px}
+.todo li span{-webkit-flex:1;flex:1;min-width:0;word-wrap:break-word;margin:0 8px}
+.todo li.done span{color:var(--muted);text-decoration:line-through}
+.ck{width:24px;height:24px;border-radius:7px;border:2px solid var(--muted);background:none;-webkit-flex:none;flex:none;padding:0;-webkit-appearance:none}
+.done .ck{background:var(--sage);border-color:var(--sage)}
+.x{background:none;border:0;color:var(--muted);font-size:22px;padding:0 4px;-webkit-appearance:none}
+.add{display:-webkit-flex;display:flex;margin-top:8px}
+.add input{-webkit-flex:1;flex:1;min-width:0;background:var(--line);border:0;border-radius:10px;padding:9px 10px;color:var(--fg);font:inherit;font-size:16px;margin-right:6px;-webkit-appearance:none}
+
+/* Nieuws */
+.feat{display:-webkit-flex;display:flex;margin-top:10px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.feat .img{width:42%;max-width:260px;-webkit-flex:none;flex:none;border-radius:14px;background-color:var(--line);background-size:cover;background-position:center;margin-right:16px;min-height:130px}
+.feat .w{min-width:0;-webkit-flex:1;flex:1}
+.feat .ti{font-family:var(--display);font-weight:600;font-size:22px;line-height:1.15}
+.feat .ds{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.news ul{list-style:none;padding:0;margin:0;overflow:hidden;-webkit-flex:1;flex:1;position:relative}
+.tabs{display:-webkit-flex;display:flex}
+.tab{background:none;border:1px solid var(--line);color:var(--muted);border-radius:99px;padding:4px 10px;margin-left:6px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;-webkit-appearance:none}
+.tab.on{border-color:var(--amber);color:var(--amber)}
+.src{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--rain);margin-right:6px}
+.src.sp{color:var(--sage)}
+.feat{-webkit-transition:opacity .4s;transition:opacity .4s}.feat.fade{opacity:0}
+.dots{display:-webkit-flex;display:flex;margin:-6px 0 6px}.dots i{width:6px;height:6px;border-radius:6px;background:var(--line);margin-right:5px}.dots i.on{background:var(--amber)}
+.news li a{display:-webkit-flex;display:flex;padding:9px 0;border-bottom:1px solid var(--line)}
+.news li .h{font-family:var(--mono);font-size:11px;color:var(--muted);width:58px;-webkit-flex:none;flex:none;padding-top:3px}
+.news li .ti{font-size:15px;line-height:1.3;min-width:0;-webkit-flex:1;flex:1}
+.ago{font-family:var(--mono);font-size:11px;color:var(--amber);margin-top:8px}
+
+button.p{background:var(--amber);color:#1a1408;border:0;border-radius:10px;padding:10px 14px;font-family:var(--body);font-size:15px;font-weight:500;-webkit-appearance:none}
+button.g{background:var(--line);color:var(--fg);border:0;border-radius:10px;padding:10px 14px;font-family:var(--body);font-size:15px;font-weight:500;-webkit-appearance:none}
+button:focus,input:focus{outline:2px solid var(--amber)}
+
+/* Instellingen */
+.ov{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,10,14,.85);z-index:10;overflow:auto;-webkit-overflow-scrolling:touch;padding:24px 16px}
+.panel{background:var(--tile2);border-radius:22px;padding:22px;max-width:620px;margin:0 auto}
+.panel h2{font-family:var(--display);font-weight:600;font-size:24px;margin:0 0 4px}
+.sec{border-top:1px solid var(--line);margin-top:16px;padding-top:14px}
+.sec h3{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin:0;font-weight:400}
+.panel label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+.panel input{width:100%;background:var(--line);border:0;border-radius:10px;padding:10px;color:var(--fg);font:inherit;font-size:16px;-webkit-appearance:none}
+.half{display:-webkit-flex;display:flex}.half>div{-webkit-flex:1;flex:1;min-width:0;margin-right:8px}.half>div:last-child{margin-right:0}
+.help{font-size:12px;color:var(--muted);line-height:1.5;margin-top:6px}
+.code{font-family:var(--mono);font-size:12px;background:var(--bg);padding:8px 10px;border-radius:8px;word-break:break-all;margin-top:6px;-webkit-user-select:all;user-select:all}
+.btns{display:-webkit-flex;display:flex;-webkit-justify-content:flex-end;justify-content:flex-end;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin-top:14px}
+.btns button{margin:0 0 6px 8px}
+.btns.left{-webkit-justify-content:flex-start;justify-content:flex-start}.btns.left button{margin:0 8px 6px 0}
+.status{font-size:13px;margin-top:6px;line-height:1.45}
+.dim{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;opacity:.6;z-index:5}
+
+@media (orientation:portrait),(max-width:900px){
+  body{overflow:auto;height:auto}
+  .wrap{height:auto}
+  .row{display:block}
+  .row>.t,.row>.col{margin:0 0 12px 0}
+  .clock,.wx{min-height:250px}.cal,.todo{min-height:260px}.radio{min-height:200px}.news{min-height:560px}
+  .time{font-size:96px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="row r1">
+    <section class="t clock f1 mr">
+      <button class="gear" id="gear" type="button" aria-label="Instellingen">&#9881;</button>
+      <div class="greet" id="greet">Goedendag</div>
+      <div class="time" id="time">--:--<span class="sec" id="sec">00</span></div>
+      <div>
+        <div class="date" id="date">&nbsp;</div>
+        <div class="chips">
+          <span class="chip" id="wk">Week --</span>
+          <span class="chip" id="sun">zon --:-- &rarr; --:--</span>
+          <span class="chip" id="doy">Dag ---</span>
+        </div>
+      </div>
+    </section>
+    <section class="t wx f1">
+      <div class="lbl"><span id="wxplace">Weer</span><small id="wxupd"></small></div>
+      <div id="wxbody" class="fill"><div class="empty">Weer laden&hellip;</div></div>
+    </section>
+  </div>
+
+  <div class="row r2">
+    <section class="t cal f1 mr">
+      <div class="lbl"><span>Agenda</span><small id="calupd"></small></div>
+      <ul id="callist"><li class="empty">Agenda laden&hellip;</li></ul>
+    </section>
+    <div class="col f1 mr">
+      <section class="t radio f1 mb">
+        <div class="lbl"><span>Radio</span></div>
+        <div class="rs" id="rstate">tik op een zender</div>
+        <div class="stations" id="stations"></div>
+      </section>
+      <section class="t todo f1">
+        <div class="lbl"><span>Te doen</span><small id="todocount"></small></div>
+        <ul id="list"></ul>
+        <form class="add" id="addf">
+          <input id="newtodo" placeholder="Nieuwe taak&hellip;" autocomplete="off">
+          <button class="p" type="submit" aria-label="Toevoegen">+</button>
+        </form>
+      </section>
+    </div>
+    <section class="t news f2">
+      <div class="lbl"><span>Nieuws <small id="newsupd" style="margin-left:8px"></small></span><span class="tabs" id="tabs"><button type="button" class="tab on" data-f="">Alles</button><button type="button" class="tab" data-f="VRT NWS">VRT NWS</button><button type="button" class="tab" data-f="Sporza">Sporza</button></span></div>
+      <div id="newsbody" class="fill"><div class="empty">Nieuws laden&hellip;</div></div>
+    </section>
+  </div>
+</div>
+
+<div class="ov" id="ov" style="display:none">
+  <form class="panel" id="setf">
+    <h2>Instellingen</h2>
+    <div class="help">Deze instellingen blijven alleen op dit toestel bewaard. Weer, nieuws en de agendalink stel je in op GitHub.</div>
+
+    <div class="sec"><h3>Agenda</h3>
+      <label for="s_key">Agendawachtwoord</label>
+      <input id="s_key" type="password" autocomplete="off" placeholder="Hetzelfde als CAL_KEY op GitHub">
+      <div class="help">Je afspraken staan versleuteld online. Met dit wachtwoord leest dit scherm ze.</div>
+    </div>
+
+    <div class="sec"><h3>Nacht</h3>
+      <div class="half">
+        <div><label for="s_d1">Scherm dimmen vanaf (uur)</label><input id="s_d1" type="number" min="0" max="23"></div>
+        <div><label for="s_d2">tot (uur)</label><input id="s_d2" type="number" min="0" max="23"></div>
+      </div>
+    </div>
+
+    <div class="btns">
+      <button class="g" type="button" id="cancel">Sluiten</button>
+      <button class="p" type="submit">Bewaar</button>
+    </div>
+  </form>
+</div>
+<div class="dim" id="dim" style="display:none"></div>
+
+<script>
+(function(){
+"use strict";
+var DAGEN=["zondag","maandag","dinsdag","woensdag","donderdag","vrijdag","zaterdag"];
+var DAG3=["zo","ma","di","wo","do","vr","za"];
+var MAANDEN=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
+var MND3=["jan","feb","mrt","apr","mei","jun","jul","aug","sep","okt","nov","dec"];
+var DAY=864e5;
+function $(id){return document.getElementById(id)}
+function pad(n){return (n<10?"0":"")+n}
+function hm(d){return pad(d.getHours())+":"+pad(d.getMinutes())}
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+function enc(s){return encodeURIComponent(s)}
+function store(k,v){try{if(v===undefined){var r=localStorage.getItem(k);return r==null?null:JSON.parse(r)}if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}}
+/* "2026-10-16T14:00" of "2026-10-16" als lokale tijd (Safari 9 leest dit anders als UTC) */
+function localDate(s){var m=/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(s);return m?new Date(+m[1],m[2]-1,+m[3],+(m[4]||12),+(m[5]||0)):new Date(NaN)}
+
+var DEF={key:"",d1:23,d2:6};
+var S=store("bs.settings")||{};
+for(var k in DEF){if(S[k]===undefined||S[k]===null)S[k]=DEF[k]}
+var REDIRECT=location.protocol+"//"+location.host+location.pathname;
+
+/* ---------- import via link (#import=...) ---------- */
+(function(){
+  var m=/#import=([A-Za-z0-9_\-]+)/.exec(location.hash);
+  if(!m)return;
+  try{
+    var b=m[1].replace(/-/g,"+").replace(/_/g,"/");while(b.length%4)b+="=";
+    var o=JSON.parse(decodeURIComponent(escape(atob(b))));
+    if(o.k){S.key=o.k;store("bs.settings",S)}
+  }catch(e){}
+  try{history.replaceState(null,"",REDIRECT)}catch(e){location.hash=""}
+})();
+
+function req(url,o){o=o||{};return new Promise(function(res,rej){
+  var x=new XMLHttpRequest();x.open(o.method||"GET",url,true);
+  if(o.headers)for(var h in o.headers)x.setRequestHeader(h,o.headers[h]);
+  x.timeout=o.timeout||20000;
+  x.onload=function(){if(x.status>=200&&x.status<300)res({status:x.status,text:x.responseText});else rej({status:x.status,text:x.responseText})};
+  x.onerror=function(){rej({status:0,text:""})};x.ontimeout=x.onerror;
+  x.send(o.body||null);
+})}
+
+/* ---------- SHA-256 en ontsleutelen (zelfde schema als update.js) ---------- */
+var K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+function ror(x,n){return (x>>>n)|(x<<(32-n))}
+function sha256(m){
+  var l=m.length,bl=((l+9+63)>>6)<<6,bb=new Uint8Array(bl),i;
+  for(i=0;i<l;i++)bb[i]=m[i];
+  bb[l]=0x80;var bits=l*8;bb[bl-4]=(bits>>>24)&255;bb[bl-3]=(bits>>>16)&255;bb[bl-2]=(bits>>>8)&255;bb[bl-1]=bits&255;
+  var H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19],W=new Array(64);
+  for(var o=0;o<bl;o+=64){
+    for(i=0;i<16;i++)W[i]=(bb[o+4*i]<<24)|(bb[o+4*i+1]<<16)|(bb[o+4*i+2]<<8)|bb[o+4*i+3];
+    for(i=16;i<64;i++){var x=W[i-15],y=W[i-2];W[i]=(W[i-16]+(ror(x,7)^ror(x,18)^(x>>>3))+W[i-7]+(ror(y,17)^ror(y,19)^(y>>>10)))|0}
+    var a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+    for(i=0;i<64;i++){
+      var t1=(h+(ror(e,6)^ror(e,11)^ror(e,25))+((e&f)^(~e&g))+K[i]+W[i])|0;
+      var t2=((ror(a,2)^ror(a,13)^ror(a,22))+((a&b)^(a&c)^(b&c)))|0;
+      h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;
+    }
+    H[0]=(H[0]+a)|0;H[1]=(H[1]+b)|0;H[2]=(H[2]+c)|0;H[3]=(H[3]+d)|0;H[4]=(H[4]+e)|0;H[5]=(H[5]+f)|0;H[6]=(H[6]+g)|0;H[7]=(H[7]+h)|0;
+  }
+  var out=new Uint8Array(32);
+  for(i=0;i<8;i++){out[4*i]=(H[i]>>>24)&255;out[4*i+1]=(H[i]>>>16)&255;out[4*i+2]=(H[i]>>>8)&255;out[4*i+3]=H[i]&255}
+  return out;
+}
+function utf8(s){var b=unescape(enc(s)),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
+function unb64(s){var b=atob(s),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
+function cat(){var n=0,i,j;for(i=0;i<arguments.length;i++)n+=arguments[i].length;var o=new Uint8Array(n),p=0;for(i=0;i<arguments.length;i++)for(j=0;j<arguments[i].length;j++)o[p++]=arguments[i][j];return o}
+function hex(a){var s="";for(var i=0;i<a.length;i++)s+=(a[i]<16?"0":"")+a[i].toString(16);return s}
+function decrypt(box,pass){
+  var key=sha256(utf8(pass)),nonce=unb64(box.n),ct=unb64(box.c),pt=new Uint8Array(ct.length);
+  for(var i=0;i<ct.length;i+=32){
+    var ctr=new Uint8Array([(i/32>>>24)&255,(i/32>>>16)&255,(i/32>>>8)&255,(i/32)&255]),ks=sha256(cat(key,nonce,ctr));
+    for(var j=0;j<32&&i+j<ct.length;j++)pt[i+j]=ct[i+j]^ks[j];
+  }
+  if(hex(sha256(cat(key,pt))).slice(0,16)!==box.h)return null;
+  var s="";for(var q=0;q<pt.length;q++)s+=String.fromCharCode(pt[q]);
+  return JSON.parse(decodeURIComponent(escape(s)));
+}
+
+/* ---------- klok ---------- */
+function isoWeek(d){var t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));var day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);var y0=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y0)/DAY+1)/7)}
+var rad=Math.PI/180,J1970=2440588,J2000=2451545;
+function sunTimes(date,lat,lng){
+  var lw=rad*-lng,phi=rad*lat,d=date.valueOf()/DAY-0.5+J1970-J2000;
+  var n=Math.round(d-0.0009-lw/(2*Math.PI)),ds=0.0009+lw/(2*Math.PI)+n;
+  var M=rad*(357.5291+0.98560028*ds),C=rad*(1.9148*Math.sin(M)+0.02*Math.sin(2*M)+0.0003*Math.sin(3*M));
+  var L=M+C+rad*102.9372+Math.PI,dec=Math.asin(Math.sin(rad*23.4397)*Math.sin(L));
+  var Jnoon=J2000+ds+0.0053*Math.sin(M)-0.0069*Math.sin(2*L);
+  var w=Math.acos((Math.sin(-0.833*rad)-Math.sin(phi)*Math.sin(dec))/(Math.cos(phi)*Math.cos(dec)));
+  var Jset=J2000+(0.0009+(w+lw)/(2*Math.PI)+n)+0.0053*Math.sin(M)-0.0069*Math.sin(2*L),Jrise=Jnoon-(Jset-Jnoon);
+  function fj(j){return new Date((j+0.5-J1970)*DAY)}
+  return {rise:fj(Jrise),set:fj(Jset)};
+}
+var undimUntil=0,lat=50.85,lon=4.35,lastSunDay=-1;
+function tick(){
+  var n=new Date(),h=n.getHours();
+  $("time").firstChild.nodeValue=hm(n);
+  $("sec").textContent=pad(n.getSeconds());
+  $("greet").textContent=h<6?"Goedenacht":h<12?"Goedemorgen":h<18?"Goedemiddag":"Goedenavond";
+  $("date").textContent=cap(DAGEN[n.getDay()])+" "+n.getDate()+" "+MAANDEN[n.getMonth()];
+  $("wk").textContent="Week "+isoWeek(n);
+  $("doy").textContent="Dag "+(Math.floor((n-new Date(n.getFullYear(),0,1))/DAY)+1);
+  if(lastSunDay!==n.getDate()){var s=sunTimes(n,lat,lon);lastSunDay=n.getDate();$("sun").innerHTML="zon "+hm(s.rise)+" &rarr; "+hm(s.set)}
+  var d1=+S.d1,d2=+S.d2,night=d1===d2?false:(d1>d2?(h>=d1||h<d2):(h>=d1&&h<d2));
+  $("dim").style.display=(night&&Date.now()>undimUntil)?"block":"none";
+  if(h===4&&n.getMinutes()===0&&n.getSeconds()===0)location.reload();
+}
+$("dim").onclick=function(){undimUntil=Date.now()+5*60000;tick()};
+
+/* ---------- weer ---------- */
+var WMO={0:["Helder","sun"],1:["Overwegend helder","sun"],2:["Half bewolkt","part"],3:["Bewolkt","cloud"],45:["Mist","fog"],48:["Rijpmist","fog"],
+51:["Lichte motregen","rain"],53:["Motregen","rain"],55:["Dichte motregen","rain"],56:["IJzel","rain"],57:["IJzel","rain"],
+61:["Lichte regen","rain"],63:["Regen","rain"],65:["Zware regen","rain"],66:["IJzelregen","rain"],67:["IJzelregen","rain"],
+71:["Lichte sneeuw","snow"],73:["Sneeuw","snow"],75:["Zware sneeuw","snow"],77:["Sneeuwkorrels","snow"],
+80:["Lichte buien","rain"],81:["Buien","rain"],82:["Zware buien","rain"],85:["Sneeuwbuien","snow"],86:["Sneeuwbuien","snow"],
+95:["Onweer","storm"],96:["Onweer met hagel","storm"],99:["Onweer met hagel","storm"]};
+function icon(kind,day){
+  var A="#f2b45a",C="#c9ced8",R="#7fb3e6",W="#eef0f3";
+  var sun='<circle cx="32" cy="32" r="11" fill="'+A+'"/><g stroke="'+A+'" stroke-width="3" stroke-linecap="round"><path d="M32 8v6M32 50v6M8 32h6M50 32h6M15 15l4 4M45 45l4 4M15 49l4-4M45 19l4-4"/></g>';
+  var moon='<path d="M40 12a20 20 0 1 0 12 30A16 16 0 0 1 40 12z" fill="'+W+'"/>';
+  function cloud(y,f){return '<path d="M20 '+(46+y)+'h26a10 10 0 0 0 0-20 14 14 0 0 0-27-2 9 9 0 0 0 1 22z" fill="'+(f||C)+'"/>'}
+  var b='<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">',e='</svg>';
+  if(kind==="sun")return b+(day===0?moon:sun)+e;
+  if(kind==="part")return b+'<g transform="translate(10,-8) scale(.7)">'+(day===0?moon:sun)+'</g>'+cloud(0)+e;
+  if(kind==="cloud")return b+cloud(-2)+e;
+  if(kind==="fog")return b+cloud(-8)+'<g stroke="'+C+'" stroke-width="3" stroke-linecap="round"><path d="M14 48h36M18 55h28"/></g>'+e;
+  if(kind==="rain")return b+cloud(-8)+'<g stroke="'+R+'" stroke-width="3" stroke-linecap="round"><path d="M22 46l-3 8M33 46l-3 8M44 46l-3 8"/></g>'+e;
+  if(kind==="snow")return b+cloud(-8)+'<g fill="'+W+'"><circle cx="22" cy="50" r="2.5"/><circle cx="32" cy="55" r="2.5"/><circle cx="42" cy="50" r="2.5"/></g>'+e;
+  return b+cloud(-8,"#a3aab8")+'<path d="M34 40l-8 12h7l-4 10 11-14h-7l4-8z" fill="'+A+'"/>'+e;
+}
+function drawWeather(w){
+  if(!w){$("wxbody").innerHTML='<div class="empty">Nog geen weergegevens. Ze komen binnen zodra GitHub de eerste keer heeft bijgewerkt.</div>';return}
+  $("wxplace").textContent="Weer · "+w.place;
+  var c=w.now,wc=WMO[c.code]||["—","cloud"],now=new Date(),start=0,i;
+  for(i=0;i<w.hourly.length;i++){var t=localDate(w.hourly[i].t);if(t.getTime()+36e5>now.getTime()){start=i;break}}
+  var hrs=w.hourly.slice(start,start+12),bars="",maxp=0;
+  for(i=0;i<hrs.length;i++){var p=hrs[i].p||0;if(p>maxp)maxp=p;bars+='<div style="height:'+Math.max(4,p)+'%"></div>'}
+  var lab='<span>nu</span>';
+  if(hrs.length>11)lab+='<span>'+pad(localDate(hrs[4].t).getHours())+'u</span><span>'+pad(localDate(hrs[8].t).getHours())+'u</span><span>'+pad(localDate(hrs[11].t).getHours())+'u</span>';
+  var todayStr=now.getFullYear()+"-"+pad(now.getMonth()+1)+"-"+pad(now.getDate()),ti=0;
+  for(i=0;i<w.days.length;i++)if(w.days[i].d===todayStr){ti=i;break}
+  var days="";
+  for(i=ti+1;i<w.days.length&&i<ti+4;i++){
+    var dd=w.days[i],dk=WMO[dd.code]||["","cloud"];
+    days+='<div class="day"><div class="n">'+DAG3[localDate(dd.d).getDay()]+'</div><div class="ic">'+icon(dk[1],1)+'</div><div class="r">'+Math.round(dd.max)+'&deg; <span>'+Math.round(dd.min)+'&deg;</span></div></div>';
+  }
+  var td=w.days[ti]||{max:c.t,min:c.t};
+  var rainTxt=maxp<10?"Droog":maxp<40?"Kleine kans op regen":maxp<70?"Neem een paraplu":"Regen verwacht";
+  $("wxbody").innerHTML=
+    '<div class="wxtop"><div class="wxicon">'+icon(wc[1],c.day)+'</div><div class="wxtemp">'+Math.round(c.t)+'&deg;</div>'+
+    '<div class="wxdesc"><div class="d1">'+wc[0]+'</div><div class="d2">Voelt als '+Math.round(c.feel)+'&deg; &middot; wind '+Math.round(c.wind)+' km/u<br>Vandaag '+Math.round(td.max)+'&deg; / '+Math.round(td.min)+'&deg;</div></div></div>'+
+    '<div class="wxbottom" style="margin-top:14px"><div class="rain"><div class="lbl" style="font-size:10px"><span>Regenkans 12 u</span><small>'+rainTxt+'</small></div><div class="bars">'+bars+'</div><div class="barlab">'+lab+'</div></div><div class="days">'+days+'</div></div>';
+}
+
+/* ---------- agenda ---------- */
+function drawCal(box,configured){
+  if(!configured){$("callist").innerHTML='<li class="empty"><b>Nog geen agenda gekoppeld.</b><br>Voeg op GitHub de geheimen ICS_URLS en CAL_KEY toe.</li>';return}
+  if(!S.key){$("callist").innerHTML='<li class="empty"><b>Agenda vergrendeld.</b><br>Tik op &#9881; en vul je agendawachtwoord in.</li>';return}
+  if(!box){$("callist").innerHTML='<li class="empty">Je iCloud-agenda was niet bereikbaar bij de laatste update.</li>';return}
+  var occ;try{occ=decrypt(box,S.key)}catch(e){occ=null}
+  if(!occ){$("callist").innerHTML='<li class="empty"><b>Verkeerd agendawachtwoord.</b><br>Tik op &#9881; en controleer het.</li>';return}
+  var now=new Date(),from=new Date(now.getFullYear(),now.getMonth(),now.getDate()),to=from.getTime()+14*DAY;
+  occ=occ.filter(function(x){return x.s<to&&(x.allDay?x.e>from.getTime():x.e>now.getTime())});
+  if(!occ.length){$("callist").innerHTML='<li class="empty">Niets gepland de komende 14 dagen.</li>';return}
+  var html="",last="",shown=0;
+  for(var j=0;j<occ.length&&shown<80;j++){
+    var x=occ[j],st=new Date(x.s),sd=st<from?from:st;
+    var key=sd.getFullYear()+"-"+sd.getMonth()+"-"+sd.getDate();
+    if(key!==last){
+      var diff=Math.round((new Date(sd.getFullYear(),sd.getMonth(),sd.getDate())-from)/DAY);
+      html+='<li class="dh">'+(diff===0?"Vandaag":diff===1?"Morgen":cap(DAGEN[sd.getDay()])+" "+sd.getDate()+" "+MND3[sd.getMonth()])+'</li>';last=key;
+    }
+    var isNow=!x.allDay&&x.s<=now.getTime()&&x.e>now.getTime();
+    html+='<li class="ev'+(isNow?" now":"")+'"><div class="h">'+(x.allDay?"dag":hm(st))+'</div><div class="w"><div class="ti">'+esc(x.title||"(zonder titel)")+'</div>'+(x.loc?'<div class="lo">'+esc(x.loc)+'</div>':"")+'</div></li>';
+    shown++;
+  }
+  $("callist").innerHTML=html;
+}
+
+/* ---------- nieuws ---------- */
+function ago(t){var m=Math.round((Date.now()-t)/6e4);if(m<1)return "zonet";if(m<60)return m+" min geleden";var h=Math.round(m/60);if(h<24)return h+" u geleden";return Math.round(h/24)+" d geleden"}
+var NF=store("bs.newsfilter")||"",newsItems=[],feats=[],featIdx=0,rollPause=0;
+function srcTag(it){return it.src?'<span class="src'+(it.src==="Sporza"?" sp":"")+'">'+esc(it.src)+'</span>':""}
+function drawNews(items){
+  newsItems=items||[];
+  var list=newsItems.filter(function(x){return !NF||x.src===NF});
+  if(!list.length){feats=[];$("newsbody").innerHTML='<div class="empty">Nog geen nieuws binnen.</div>';return}
+  feats=list.filter(function(x){return x.img}).slice(0,6);if(!feats.length)feats=list.slice(0,1);
+  var rest=list.filter(function(x){return feats.indexOf(x)<0}).slice(0,30),li="",dots="";
+  for(var i=0;i<rest.length;i++)li+='<li><a href="'+esc(rest[i].link)+'" target="_blank"><div class="h">'+hm(new Date(rest[i].at))+'</div><div class="ti">'+(NF?"":srcTag(rest[i]))+esc(rest[i].title)+'</div></a></li>';
+  for(i=0;i<feats.length;i++)dots+='<i></i>';
+  $("newsbody").innerHTML='<a class="feat" id="feat" target="_blank"></a>'+(feats.length>1?'<div class="dots" id="dots">'+dots+'</div>':"")+'<ul id="roll">'+li+'</ul>';
+  var u=$("roll");if(u.scrollHeight>u.clientHeight+4)u.innerHTML=li+li; /* dubbel voor een naadloze rol */
+  featIdx=featIdx%feats.length;showFeat();
+}
+function showFeat(){
+  var f=feats[featIdx],el=$("feat");if(!f||!el)return;
+  el.href=f.link;
+  el.innerHTML=(f.img?'<div class="img" style="background-image:url(&quot;'+esc(f.img)+'&quot;)"></div>':"")+
+    '<div class="w"><div class="ti">'+esc(f.title)+'</div><div class="ds">'+esc(f.desc)+'</div><div class="ago">'+srcTag(f)+ago(f.at)+'</div></div>';
+  var d=$("dots");if(d)for(var i=0;i<d.children.length;i++)d.children[i].className=i===featIdx?"on":"";
+}
+setInterval(function(){
+  var el=$("feat");if(!el||feats.length<2||Date.now()<rollPause)return;
+  el.className="feat fade";
+  setTimeout(function(){featIdx=(featIdx+1)%feats.length;showFeat();el.className="feat"},400);
+},9000);
+setInterval(function(){
+  var u=$("roll");if(!u||Date.now()<rollPause)return;
+  var half=u.scrollHeight/2;if(u.scrollHeight<=u.clientHeight+4)return;
+  u.scrollTop=u.scrollTop+1;if(u.scrollTop>=half)u.scrollTop=u.scrollTop-half;
+},50);
+$("newsbody").addEventListener("touchstart",function(){rollPause=Date.now()+15000},false);
+$("tabs").addEventListener("click",function(e){
+  var t=e.target;if(!t.getAttribute||t.getAttribute("data-f")===null)return;
+  NF=t.getAttribute("data-f");store("bs.newsfilter",NF);
+  var b=this.children;for(var i=0;i<b.length;i++)b[i].className="tab"+(b[i]===t?" on":"");
+  featIdx=0;drawNews(newsItems);
+});
+(function(){var b=$("tabs").children;for(var i=0;i<b.length;i++)b[i].className="tab"+(b[i].getAttribute("data-f")===NF?" on":"")})();
+
+/* ---------- data.json ophalen (GitHub vult dit elk kwartier) ---------- */
+var DATA=null;
+function drawAll(keepNews){
+  if(!DATA)return;
+  drawWeather(DATA.weather);if(!keepNews)drawNews(DATA.news);drawCal(DATA.cal,DATA.calConfigured);
+  var u=new Date(DATA.updated),txt="bijgewerkt "+hm(u);
+  $("wxupd").textContent=txt;$("newsupd").textContent=txt;$("calupd").textContent=txt;
+}
+function loadData(){
+  req("data.json?t="+Date.now()).then(function(r){var nd=JSON.parse(r.text),same=DATA&&DATA.updated===nd.updated;DATA=nd;drawAll(same)},function(){
+    if(!DATA){var m='<div class="empty">Nog geen gegevens. Staat de pagina al op GitHub Pages, en is de taak <b>Bureauscherm bijwerken</b> al eens gelopen?</div>';$("wxbody").innerHTML=m;$("newsbody").innerHTML=m;$("callist").innerHTML='<li class="empty">Wacht op gegevens.</li>'}
+  });
+}
+
+/* ---------- radio ---------- */
+/* VRT publiceert officieel http-adressen. Op oude iPads eerst http (geen certificaatproblemen), op nieuwe toestellen eerst https. */
+var OLDIOS=/OS [4-9]_|OS 1[0-2]_/.test(navigator.userAgent);
+function both(path,host){var h="http://"+host+path,s2="https://"+host+path;return OLDIOS?[h,s2]:[s2,h]}
+function VRT(id){return both("/"+id+"-high.mp3","icecast.vrtcdn.be").concat(both("/"+id+".aac","icecast.vrtcdn.be"))}
+function STW(id){return both("/api/livestream-redirect/"+id,"playerservices.streamtheworld.com")}
+var STATIONS=[
+  {n:"Radio 2",u:VRT("ra2wvl")},
+  {n:"Radio 1",u:VRT("radio1")},
+  {n:"StuBru",u:VRT("stubru")},
+  {n:"MNM",u:VRT("mnm")},
+  {n:"Qmusic",u:STW("QMUSIC.mp3").concat(STW("QMUSIC_SC"))},
+  {n:"Joe",u:STW("JOE.mp3").concat(STW("JOE_SC"))},
+  {n:"TOPradio",u:both("/topradio.mp3","str.topradio.be")},
+  {n:"VRT NWS",u:both("/vrtnws-high.mp3","icecast.vrtcdn.be")}
+];
+var audio=null,cur=-1,tryIdx=0,loadTimer=null,wantPlay=false;
+function rState(t){$("rstate").innerHTML=t}
+function drawStations(){
+  var html="";
+  for(var i=0;i<STATIONS.length;i++){
+    var s=STATIONS[i],cls="st"+(i===cur?(s.state==="on"?" on":" load"):(s.state==="err"?" err":""));
+    html+='<button type="button" class="'+cls+'" data-i="'+i+'">'+(i===cur&&s.state==="on"?'<span class="dot" style="background:#10221a"></span>':"")+esc(s.n)+'</button>';
+  }
+  $("stations").innerHTML=html;
+}
+function stopRadio(msg){
+  wantPlay=false;clearTimeout(loadTimer);
+  if(audio){try{audio.pause();audio.src="";}catch(e){}}
+  if(cur>=0&&STATIONS[cur].state!=="err")STATIONS[cur].state="";
+  cur=-1;rState(msg||"tik op een zender");drawStations();
+}
+/* Probeert het volgende adres. Lukt geen enkel adres, dan krijg je een link om de stream los te openen in Safari. */
+function tryNext(){
+  var s=STATIONS[cur];
+  if(tryIdx>=s.u.length){
+    var url=s.u[0];s.state="err";var name=s.n;stopRadio("");
+    rState(esc(name)+' lukt niet hier &middot; <a href="'+esc(url)+'" target="_blank" style="color:#f2b45a;text-decoration:underline">open apart</a>');
+    return;
+  }
+  clearTimeout(loadTimer);
+  loadTimer=setTimeout(function(){if(wantPlay&&cur>=0&&STATIONS[cur].state!=="on"){rState(esc(STATIONS[cur].n)+" laden&hellip; tik nog eens om een ander adres te proberen")}},7000);
+  audio.src=s.u[tryIdx++];
+  try{audio.load();var p=audio.play();if(p&&p.then)p.then(null,function(){})}catch(e){}
+}
+function playStation(i){
+  if(!audio){
+    audio=document.createElement("audio");document.body.appendChild(audio);
+    audio.addEventListener("playing",function(){if(cur<0)return;clearTimeout(loadTimer);STATIONS[cur].state="on";rState('<span class="dot"></span>'+esc(STATIONS[cur].n)+' &middot; tik om te stoppen');drawStations()});
+    audio.addEventListener("error",function(){if(wantPlay&&cur>=0&&audio.getAttribute("src")){tryNext()}});
+  }
+  if(i===cur){
+    if(STATIONS[i].state==="on"){stopRadio("gestopt");return}
+    tryNext();return; /* nog aan het laden: volgende adres proberen, binnen deze tik */
+  }
+  if(cur>=0&&STATIONS[cur].state!=="err")STATIONS[cur].state="";
+  cur=i;tryIdx=0;wantPlay=true;STATIONS[i].state="load";
+  rState(esc(STATIONS[i].n)+" laden&hellip;");drawStations();
+  tryNext();
+}
+$("stations").addEventListener("click",function(e){
+  var t=e.target;while(t&&t!==this&&!(t.getAttribute&&t.getAttribute("data-i")!==null))t=t.parentNode;
+  if(t&&t!==this)playStation(+t.getAttribute("data-i"));
+});
+drawStations();
+
+/* ---------- taken ---------- */
+var todos=store("bs.todos")||[{t:"Voorbeeld: mails beantwoorden",d:true},{t:"Voorbeeld: planten water geven",d:false}];
+function renderTodos(){
+  var ul=$("list"),open=0;ul.innerHTML="";
+  for(var i=0;i<todos.length;i++){(function(i){
+    if(!todos[i].d)open++;
+    var li=document.createElement("li");if(todos[i].d)li.className="done";
+    var b=document.createElement("button");b.className="ck";b.type="button";b.setAttribute("aria-label","Afvinken");
+    b.onclick=function(){todos[i].d=!todos[i].d;saveTodos()};
+    var sp=document.createElement("span");sp.textContent=todos[i].t;
+    var x=document.createElement("button");x.className="x";x.type="button";x.innerHTML="&times;";x.setAttribute("aria-label","Verwijderen");
+    x.onclick=function(){todos.splice(i,1);saveTodos()};
+    li.appendChild(b);li.appendChild(sp);li.appendChild(x);ul.appendChild(li);
+  })(i)}
+  $("todocount").textContent=open?open+" open":"alles af";
+}
+function saveTodos(){store("bs.todos",todos);renderTodos()}
+$("addf").addEventListener("submit",function(e){e.preventDefault();var v=$("newtodo").value.replace(/^\s+|\s+$/g,"");if(v){todos.push({t:v,d:false});$("newtodo").value="";$("newtodo").blur();saveTodos()}});
+
+/* ---------- instellingen ---------- */
+function openSettings(){
+  $("s_key").value=S.key;$("s_d1").value=S.d1;$("s_d2").value=S.d2;
+  $("ov").style.display="block";
+}
+function readForm(){
+  S.key=$("s_key").value;
+  S.d1=parseInt($("s_d1").value,10);if(isNaN(S.d1))S.d1=DEF.d1;S.d2=parseInt($("s_d2").value,10);if(isNaN(S.d2))S.d2=DEF.d2;
+  store("bs.settings",S);
+}
+$("gear").onclick=openSettings;
+$("cancel").onclick=function(){$("ov").style.display="none"};
+$("setf").addEventListener("submit",function(e){e.preventDefault();readForm();$("ov").style.display="none";drawAll();tick()});
+
+/* ---------- starten ---------- */
+tick();setInterval(tick,1000);
+renderTodos();
+loadData();setInterval(loadData,5*60000);
+setInterval(function(){drawAll(true)},60000);
+})();
+</script>
+</body>
+</html>
