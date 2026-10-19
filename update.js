@@ -71,10 +71,22 @@ function attr(block, name, a, extra) {
   }
   return "";
 }
+// FEEDS: "Naam|url" per regel. Standaard VRT NWS en Sporza.
+const FEEDS = (process.env.FEEDS || ("VRT NWS|" + FEED + "\nSporza|https://sporza.be/nl.rss.xml"))
+  .split(/\n/).map(l => l.trim()).filter(Boolean).map(l => { const i = l.indexOf("|"); return i > 0 ? { src: l.slice(0, i).trim(), url: l.slice(i + 1).trim() } : { src: "Nieuws", url: l }; });
 async function news() {
-  const xml = await get(FEED);
+  let all = [];
+  for (const f of FEEDS) {
+    try { all = all.concat((await feed(f.url)).map(x => Object.assign(x, { src: f.src }))); }
+    catch (e) { console.error("Feed niet bereikbaar:", f.src, e.message); }
+  }
+  if (!all.length) throw new Error("geen enkele feed bereikbaar");
+  return all.sort((a, b) => b.at - a.at);
+}
+async function feed(url) {
+  const xml = await get(url);
   const blocks = xml.match(/<item\b[\s\S]*?<\/item>/gi) || xml.match(/<entry\b[\s\S]*?<\/entry>/gi) || [];
-  return blocks.slice(0, 12).map(b => {
+  return blocks.slice(0, 20).map(b => {
     const link = text(tag(b, "link")) || attr(b, "link", "href", /rel="alternate"|^(?![\s\S]*rel=)/i) || attr(b, "link", "href");
     const img = attr(b, "enclosure", "url") || attr(b, "media:content", "url") || attr(b, "media:thumbnail", "url") ||
       attr(b, "link", "href", /rel="enclosure"/i);
@@ -181,12 +193,12 @@ async function calendar() {
     try { all.push(...parseICS(await get(u.replace(/^webcals?:\/\//i, "https://")))); }
     catch (e) { console.error("Agenda niet bereikbaar:", e.message); }
   }
-  const now = new Date(), from = new Date(now.getFullYear(), now.getMonth(), now.getDate()), to = new Date(from.getTime() + 9 * DAY);
+  const now = new Date(), from = new Date(now.getFullYear(), now.getMonth(), now.getDate()), to = new Date(from.getTime() + 15 * DAY);
   const ov = {}; all.forEach(e => { if (e.rid) ov[e.uid + "|" + e.rid] = 1; });
   let occ = [];
   all.forEach(e => { if (e.status !== "CANCELLED") occ = occ.concat(expand(e, from, to, ov)); });
   occ.sort((a, b) => a.s - b.s);
-  return encrypt(JSON.stringify(occ.slice(0, 60)), KEY);
+  return encrypt(JSON.stringify(occ.slice(0, 150)), KEY);
 }
 
 /* ---------- versleuteling: SHA-256 in tellermodus, zelfde code staat in index.html ---------- */

@@ -64,7 +64,7 @@ a{color:inherit;text-decoration:none}
 .day .r{font-size:13px}.day .r span{color:var(--muted)}
 
 /* Agenda */
-.cal ul{list-style:none;margin:6px 0 0;padding:0;overflow:hidden;-webkit-flex:1;flex:1}
+.cal ul{list-style:none;margin:6px 0 0;padding:0;overflow:auto;-webkit-overflow-scrolling:touch;-webkit-flex:1;flex:1}
 .cal .dh{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);margin:12px 0 4px}
 .cal .ev{display:-webkit-flex;display:flex;padding:7px 0;border-bottom:1px solid var(--line)}
 .cal .ev .h{font-family:var(--mono);font-size:12px;color:var(--muted);width:46px;-webkit-flex:none;flex:none;padding-top:2px}
@@ -75,6 +75,7 @@ a{color:inherit;text-decoration:none}
 
 /* Radio */
 .stations{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;-webkit-justify-content:space-between;justify-content:space-between;-webkit-align-content:flex-end;align-content:flex-end;margin-top:auto;padding-top:8px}
+.rs{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.35;min-height:18px}
 .st{width:48.5%;margin-top:6px;background:var(--line);color:var(--fg);border:0;border-radius:10px;padding:8px 8px 8px 10px;text-align:left;font-family:var(--body);font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-webkit-appearance:none;position:relative}
 .st.on{background:var(--sage);color:#10221a}
 .st.load{background:var(--tile2);color:var(--amber)}
@@ -98,7 +99,14 @@ a{color:inherit;text-decoration:none}
 .feat .w{min-width:0;-webkit-flex:1;flex:1}
 .feat .ti{font-family:var(--display);font-weight:600;font-size:22px;line-height:1.15}
 .feat .ds{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
-.news ul{list-style:none;padding:0;margin:0;overflow:hidden;-webkit-flex:1;flex:1}
+.news ul{list-style:none;padding:0;margin:0;overflow:hidden;-webkit-flex:1;flex:1;position:relative}
+.tabs{display:-webkit-flex;display:flex}
+.tab{background:none;border:1px solid var(--line);color:var(--muted);border-radius:99px;padding:4px 10px;margin-left:6px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;-webkit-appearance:none}
+.tab.on{border-color:var(--amber);color:var(--amber)}
+.src{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--rain);margin-right:6px}
+.src.sp{color:var(--sage)}
+.feat{-webkit-transition:opacity .4s;transition:opacity .4s}.feat.fade{opacity:0}
+.dots{display:-webkit-flex;display:flex;margin:-6px 0 6px}.dots i{width:6px;height:6px;border-radius:6px;background:var(--line);margin-right:5px}.dots i.on{background:var(--amber)}
 .news li a{display:-webkit-flex;display:flex;padding:9px 0;border-bottom:1px solid var(--line)}
 .news li .h{font-family:var(--mono);font-size:11px;color:var(--muted);width:58px;-webkit-flex:none;flex:none;padding-top:3px}
 .news li .ti{font-size:15px;line-height:1.3;min-width:0;-webkit-flex:1;flex:1}
@@ -164,7 +172,8 @@ button:focus,input:focus{outline:2px solid var(--amber)}
     </section>
     <div class="col f1 mr">
       <section class="t radio f1 mb">
-        <div class="lbl"><span>Radio</span><small id="rstate">tik op een zender</small></div>
+        <div class="lbl"><span>Radio</span></div>
+        <div class="rs" id="rstate">tik op een zender</div>
         <div class="stations" id="stations"></div>
       </section>
       <section class="t todo f1">
@@ -177,7 +186,7 @@ button:focus,input:focus{outline:2px solid var(--amber)}
       </section>
     </div>
     <section class="t news f2">
-      <div class="lbl"><span>VRT NWS &middot; laatste nieuws</span><small id="newsupd"></small></div>
+      <div class="lbl"><span>Nieuws <small id="newsupd" style="margin-left:8px"></small></span><span class="tabs" id="tabs"><button type="button" class="tab on" data-f="">Alles</button><button type="button" class="tab" data-f="VRT NWS">VRT NWS</button><button type="button" class="tab" data-f="Sporza">Sporza</button></span></div>
       <div id="newsbody" class="fill"><div class="empty">Nieuws laden&hellip;</div></div>
     </section>
   </div>
@@ -373,11 +382,11 @@ function drawCal(box,configured){
   if(!box){$("callist").innerHTML='<li class="empty">Je iCloud-agenda was niet bereikbaar bij de laatste update.</li>';return}
   var occ;try{occ=decrypt(box,S.key)}catch(e){occ=null}
   if(!occ){$("callist").innerHTML='<li class="empty"><b>Verkeerd agendawachtwoord.</b><br>Tik op &#9881; en controleer het.</li>';return}
-  var now=new Date(),from=new Date(now.getFullYear(),now.getMonth(),now.getDate()),to=from.getTime()+7*DAY;
+  var now=new Date(),from=new Date(now.getFullYear(),now.getMonth(),now.getDate()),to=from.getTime()+14*DAY;
   occ=occ.filter(function(x){return x.s<to&&(x.allDay?x.e>from.getTime():x.e>now.getTime())});
-  if(!occ.length){$("callist").innerHTML='<li class="empty">Niets gepland de komende 7 dagen.</li>';return}
+  if(!occ.length){$("callist").innerHTML='<li class="empty">Niets gepland de komende 14 dagen.</li>';return}
   var html="",last="",shown=0;
-  for(var j=0;j<occ.length&&shown<10;j++){
+  for(var j=0;j<occ.length&&shown<80;j++){
     var x=occ[j],st=new Date(x.s),sd=st<from?from:st;
     var key=sd.getFullYear()+"-"+sd.getMonth()+"-"+sd.getDate();
     if(key!==last){
@@ -393,89 +402,123 @@ function drawCal(box,configured){
 
 /* ---------- nieuws ---------- */
 function ago(t){var m=Math.round((Date.now()-t)/6e4);if(m<1)return "zonet";if(m<60)return m+" min geleden";var h=Math.round(m/60);if(h<24)return h+" u geleden";return Math.round(h/24)+" d geleden"}
+var NF=store("bs.newsfilter")||"",newsItems=[],feats=[],featIdx=0,rollPause=0;
+function srcTag(it){return it.src?'<span class="src'+(it.src==="Sporza"?" sp":"")+'">'+esc(it.src)+'</span>':""}
 function drawNews(items){
-  if(!items||!items.length){$("newsbody").innerHTML='<div class="empty">Nog geen nieuws binnen.</div>';return}
-  var f=items[0];
-  var html='<a class="feat" href="'+esc(f.link)+'" target="_blank">'+(f.img?'<div class="img" style="background-image:url(&quot;'+esc(f.img)+'&quot;)"></div>':"")+
-    '<div class="w"><div class="ti">'+esc(f.title)+'</div><div class="ds">'+esc(f.desc)+'</div><div class="ago">'+ago(f.at)+'</div></div></a><ul>';
-  for(var i=1;i<items.length&&i<9;i++)html+='<li><a href="'+esc(items[i].link)+'" target="_blank"><div class="h">'+hm(new Date(items[i].at))+'</div><div class="ti">'+esc(items[i].title)+'</div></a></li>';
-  $("newsbody").innerHTML=html+"</ul>";
+  newsItems=items||[];
+  var list=newsItems.filter(function(x){return !NF||x.src===NF});
+  if(!list.length){feats=[];$("newsbody").innerHTML='<div class="empty">Nog geen nieuws binnen.</div>';return}
+  feats=list.filter(function(x){return x.img}).slice(0,6);if(!feats.length)feats=list.slice(0,1);
+  var rest=list.filter(function(x){return feats.indexOf(x)<0}).slice(0,30),li="",dots="";
+  for(var i=0;i<rest.length;i++)li+='<li><a href="'+esc(rest[i].link)+'" target="_blank"><div class="h">'+hm(new Date(rest[i].at))+'</div><div class="ti">'+(NF?"":srcTag(rest[i]))+esc(rest[i].title)+'</div></a></li>';
+  for(i=0;i<feats.length;i++)dots+='<i></i>';
+  $("newsbody").innerHTML='<a class="feat" id="feat" target="_blank"></a>'+(feats.length>1?'<div class="dots" id="dots">'+dots+'</div>':"")+'<ul id="roll">'+li+'</ul>';
+  var u=$("roll");if(u.scrollHeight>u.clientHeight+4)u.innerHTML=li+li; /* dubbel voor een naadloze rol */
+  featIdx=featIdx%feats.length;showFeat();
 }
+function showFeat(){
+  var f=feats[featIdx],el=$("feat");if(!f||!el)return;
+  el.href=f.link;
+  el.innerHTML=(f.img?'<div class="img" style="background-image:url(&quot;'+esc(f.img)+'&quot;)"></div>':"")+
+    '<div class="w"><div class="ti">'+esc(f.title)+'</div><div class="ds">'+esc(f.desc)+'</div><div class="ago">'+srcTag(f)+ago(f.at)+'</div></div>';
+  var d=$("dots");if(d)for(var i=0;i<d.children.length;i++)d.children[i].className=i===featIdx?"on":"";
+}
+setInterval(function(){
+  var el=$("feat");if(!el||feats.length<2||Date.now()<rollPause)return;
+  el.className="feat fade";
+  setTimeout(function(){featIdx=(featIdx+1)%feats.length;showFeat();el.className="feat"},400);
+},9000);
+setInterval(function(){
+  var u=$("roll");if(!u||Date.now()<rollPause)return;
+  var half=u.scrollHeight/2;if(u.scrollHeight<=u.clientHeight+4)return;
+  u.scrollTop=u.scrollTop+1;if(u.scrollTop>=half)u.scrollTop=u.scrollTop-half;
+},50);
+$("newsbody").addEventListener("touchstart",function(){rollPause=Date.now()+15000},false);
+$("tabs").addEventListener("click",function(e){
+  var t=e.target;if(!t.getAttribute||t.getAttribute("data-f")===null)return;
+  NF=t.getAttribute("data-f");store("bs.newsfilter",NF);
+  var b=this.children;for(var i=0;i<b.length;i++)b[i].className="tab"+(b[i]===t?" on":"");
+  featIdx=0;drawNews(newsItems);
+});
+(function(){var b=$("tabs").children;for(var i=0;i<b.length;i++)b[i].className="tab"+(b[i].getAttribute("data-f")===NF?" on":"")})();
 
 /* ---------- data.json ophalen (GitHub vult dit elk kwartier) ---------- */
 var DATA=null;
-function drawAll(){
+function drawAll(keepNews){
   if(!DATA)return;
-  drawWeather(DATA.weather);drawNews(DATA.news);drawCal(DATA.cal,DATA.calConfigured);
+  drawWeather(DATA.weather);if(!keepNews)drawNews(DATA.news);drawCal(DATA.cal,DATA.calConfigured);
   var u=new Date(DATA.updated),txt="bijgewerkt "+hm(u);
   $("wxupd").textContent=txt;$("newsupd").textContent=txt;$("calupd").textContent=txt;
 }
 function loadData(){
-  req("data.json?t="+Date.now()).then(function(r){DATA=JSON.parse(r.text);drawAll()},function(){
+  req("data.json?t="+Date.now()).then(function(r){var nd=JSON.parse(r.text),same=DATA&&DATA.updated===nd.updated;DATA=nd;drawAll(same)},function(){
     if(!DATA){var m='<div class="empty">Nog geen gegevens. Staat de pagina al op GitHub Pages, en is de taak <b>Bureauscherm bijwerken</b> al eens gelopen?</div>';$("wxbody").innerHTML=m;$("newsbody").innerHTML=m;$("callist").innerHTML='<li class="empty">Wacht op gegevens.</li>'}
   });
 }
 
 /* ---------- radio ---------- */
-/* Per zender meerdere adressen: eerst https, daarna http (oude iPads vertrouwen niet elk nieuw certificaat). */
-var VRT=function(id){return ["https://icecast.vrtcdn.be/"+id+"-high.mp3","http://icecast.vrtcdn.be/"+id+"-high.mp3","http://icecast.vrtcdn.be/"+id+"-mid.mp3"]};
-var STW=function(id){return ["https://playerservices.streamtheworld.com/api/livestream-redirect/"+id,"http://playerservices.streamtheworld.com/api/livestream-redirect/"+id]};
+/* VRT publiceert officieel http-adressen. Op oude iPads eerst http (geen certificaatproblemen), op nieuwe toestellen eerst https. */
+var OLDIOS=/OS [4-9]_|OS 1[0-2]_/.test(navigator.userAgent);
+function both(path,host){var h="http://"+host+path,s2="https://"+host+path;return OLDIOS?[h,s2]:[s2,h]}
+function VRT(id){return both("/"+id+"-high.mp3","icecast.vrtcdn.be").concat(both("/"+id+".aac","icecast.vrtcdn.be"))}
+function STW(id){return both("/api/livestream-redirect/"+id,"playerservices.streamtheworld.com")}
 var STATIONS=[
   {n:"Radio 2",u:VRT("ra2wvl")},
   {n:"Radio 1",u:VRT("radio1")},
   {n:"StuBru",u:VRT("stubru")},
   {n:"MNM",u:VRT("mnm")},
-  {n:"Sporza",u:VRT("sporza"),note:"Sporza zendt alleen uit tijdens grote sportmomenten."},
-  {n:"Qmusic",u:STW("QMUSIC.mp3").concat(STW("QMUSIC_SC"),["https://21293.live.streamtheworld.com/QMUSIC.mp3"])},
-  {n:"Joe",u:STW("JOE_SC").concat(STW("JOE.mp3"))},
-  {n:"TOPradio",u:["https://str.topradio.be/topradio.mp3","http://str.topradio.be/topradio.mp3"]}
+  {n:"Qmusic",u:STW("QMUSIC.mp3").concat(STW("QMUSIC_SC"))},
+  {n:"Joe",u:STW("JOE.mp3").concat(STW("JOE_SC"))},
+  {n:"TOPradio",u:both("/topradio.mp3","str.topradio.be")},
+  {n:"VRT NWS",u:both("/vrtnws-high.mp3","icecast.vrtcdn.be")}
 ];
 var audio=null,cur=-1,tryIdx=0,loadTimer=null,wantPlay=false;
 function rState(t){$("rstate").innerHTML=t}
 function drawStations(){
-  var box=$("stations"),html="";
+  var html="";
   for(var i=0;i<STATIONS.length;i++){
-    var s=STATIONS[i],cls="st"+(i===cur?(s.state==="on"?" on":" load"):"")+(s.state==="err"&&i!==cur?" err":"");
+    var s=STATIONS[i],cls="st"+(i===cur?(s.state==="on"?" on":" load"):(s.state==="err"?" err":""));
     html+='<button type="button" class="'+cls+'" data-i="'+i+'">'+(i===cur&&s.state==="on"?'<span class="dot" style="background:#10221a"></span>':"")+esc(s.n)+'</button>';
   }
-  box.innerHTML=html;
+  $("stations").innerHTML=html;
 }
 function stopRadio(msg){
   wantPlay=false;clearTimeout(loadTimer);
-  if(audio){try{audio.pause();audio.removeAttribute("src");audio.load()}catch(e){}}
+  if(audio){try{audio.pause();audio.src="";}catch(e){}}
   if(cur>=0&&STATIONS[cur].state!=="err")STATIONS[cur].state="";
   cur=-1;rState(msg||"tik op een zender");drawStations();
 }
+/* Probeert het volgende adres. Lukt geen enkel adres, dan krijg je een link om de stream los te openen in Safari. */
 function tryNext(){
   var s=STATIONS[cur];
   if(tryIdx>=s.u.length){
-    s.state="err";var name=s.n,note=s.note;stopRadio(name+" niet bereikbaar");
-    if(note)rState(note);
+    var url=s.u[0];s.state="err";var name=s.n;stopRadio("");
+    rState(esc(name)+' lukt niet hier &middot; <a href="'+esc(url)+'" target="_blank" style="color:#f2b45a;text-decoration:underline">open apart</a>');
     return;
   }
-  var url=s.u[tryIdx++];
   clearTimeout(loadTimer);
-  loadTimer=setTimeout(function(){if(wantPlay&&STATIONS[cur]&&STATIONS[cur].state!=="on")tryNext()},9000);
-  audio.src=url;
-  try{var p=audio.play();if(p&&p.then)p.then(null,function(){})}catch(e){}
+  loadTimer=setTimeout(function(){if(wantPlay&&cur>=0&&STATIONS[cur].state!=="on"){rState(esc(STATIONS[cur].n)+" laden&hellip; tik nog eens om een ander adres te proberen")}},7000);
+  audio.src=s.u[tryIdx++];
+  try{audio.load();var p=audio.play();if(p&&p.then)p.then(null,function(){})}catch(e){}
 }
 function playStation(i){
-  if(i===cur){stopRadio("gestopt");return}
   if(!audio){
-    audio=new Audio();audio.preload="none";
-    audio.addEventListener("playing",function(){if(cur<0)return;clearTimeout(loadTimer);STATIONS[cur].state="on";rState('<span class="dot"></span>'+esc(STATIONS[cur].n));drawStations()});
-    audio.addEventListener("error",function(){if(wantPlay&&cur>=0){STATIONS[cur].state="load";tryNext()}});
-    audio.addEventListener("stalled",function(){if(wantPlay&&cur>=0&&STATIONS[cur].state==="on"){rState("verbinding herstellen&hellip;");tryIdx=Math.max(0,tryIdx-1);setTimeout(function(){if(wantPlay)tryNext()},3000)}});
+    audio=document.createElement("audio");document.body.appendChild(audio);
+    audio.addEventListener("playing",function(){if(cur<0)return;clearTimeout(loadTimer);STATIONS[cur].state="on";rState('<span class="dot"></span>'+esc(STATIONS[cur].n)+' &middot; tik om te stoppen');drawStations()});
+    audio.addEventListener("error",function(){if(wantPlay&&cur>=0&&audio.getAttribute("src")){tryNext()}});
+  }
+  if(i===cur){
+    if(STATIONS[i].state==="on"){stopRadio("gestopt");return}
+    tryNext();return; /* nog aan het laden: volgende adres proberen, binnen deze tik */
   }
   if(cur>=0&&STATIONS[cur].state!=="err")STATIONS[cur].state="";
   cur=i;tryIdx=0;wantPlay=true;STATIONS[i].state="load";
   rState(esc(STATIONS[i].n)+" laden&hellip;");drawStations();
-  store("bs.radio",i);
   tryNext();
 }
 $("stations").addEventListener("click",function(e){
-  var t=e.target;while(t&&t!==this&&!t.getAttribute("data-i"))t=t.parentNode;
-  if(t&&t.getAttribute&&t.getAttribute("data-i")!==null)playStation(+t.getAttribute("data-i"));
+  var t=e.target;while(t&&t!==this&&!(t.getAttribute&&t.getAttribute("data-i")!==null))t=t.parentNode;
+  if(t&&t!==this)playStation(+t.getAttribute("data-i"));
 });
 drawStations();
 
@@ -516,7 +559,7 @@ $("setf").addEventListener("submit",function(e){e.preventDefault();readForm();$(
 tick();setInterval(tick,1000);
 renderTodos();
 loadData();setInterval(loadData,5*60000);
-setInterval(drawAll,60000);
+setInterval(function(){drawAll(true)},60000);
 })();
 </script>
 </body>
